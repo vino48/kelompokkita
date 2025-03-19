@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring Gas</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let alarmSound = new Audio('https://www.soundjay.com/button/beep-07.wav');
+
+        function updateStatus() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("status").innerText = data.status;
+                    document.getElementById("gas_value").innerText = data.gas_value;
+                    document.getElementById("last_update").innerText = data.last_update;
+                    document.body.style.backgroundColor = (data.status === "Bahaya") ? "red" : "green";
+                    document.getElementById("alarmButton").disabled = !data.alarm;
+
+                    if (data.alarm) {
+                        alarmSound.play();
+                    }
+                });
+        }
+
+        function updateHistory() {
+            fetch('/history')
+                .then(response => response.json())
+                .then(history => {
+                    const labels = history.map(entry => entry.time);
+                    const values = history.map(entry => entry.gas_value);
+                    gasChart.data.labels = labels;
+                    gasChart.data.datasets[0].data = values;
+                    gasChart.update();
+                });
+        }
+
+        function resetAlarm() {
+            fetch('/reset_alarm', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    alarmSound.pause();
+                    alarmSound.currentTime = 0;
+                    updateStatus();
+                });
+        }
+
+        setInterval(() => { updateStatus(); updateHistory(); }, 3000);
+        window.onload = () => { updateStatus(); updateHistory(); };
+    </script>
+</head>
+<body>
+    <h1>Monitoring Gas Bocor</h1>
+    <p>Status: <span id="status">Memuat...</span></p>
+    <p>Kadar Gas: <span id="gas_value">0</span></p>
+    <p>Terakhir Diperbarui: <span id="last_update">-</span></p>
+    <button id="alarmButton" onclick="resetAlarm()" disabled>Matikan Alarm</button>
+    <canvas id="gasChart"></canvas>
+    <script>
+        const ctx = document.getElementById('gasChart').getContext('2d');
+        const gasChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Kadar Gas',
+                    data: [],
+                    borderColor: 'blue',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    </script>
+</body>
+</html>

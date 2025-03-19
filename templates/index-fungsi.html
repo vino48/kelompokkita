@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Monitoring - Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .status {
+            margin: 20px 0;
+        }
+        .status p {
+            font-size: 18px;
+            margin: 5px 0;
+        }
+        .btn {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-off {
+            background-color: #f44336;
+        }
+    </style>
+    <script>
+        async function fetchData() {
+            const response = await fetch('/data');
+            const data = await response.json();
+
+            document.getElementById('gas').innerText = data.gas_status;
+            document.getElementById('smoke').innerText = data.smoke_status;
+            document.getElementById('temp').innerText = data.temp;
+            document.getElementById('humidity').innerText = data.humidity;
+            document.getElementById('wind').innerText = data.wind_speed;
+
+            document.getElementById('gas-alarm').innerText = data.gas_status;
+            document.getElementById('smoke-alarm').innerText = data.smoke_status;
+            document.getElementById('temp-alarm').innerText = data.temp > 30 ? 'Berbahaya' : 'Aman';
+            document.getElementById('humidity-alarm').innerText = data.humidity > 70 ? 'Berbahaya' : 'Aman';
+        }
+
+        async function setAlarm(type) {
+            const status = document.getElementById(`${type}-alarm`).innerText === "OFF" ? "ON" : "OFF";
+            await fetch('/set_alarm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type, status })
+            });
+            fetchData();
+        }
+
+        setInterval(fetchData, 2000);
+    </script>
+</head>
+<body onload="fetchData()">
+    <h1>Dashboard Monitoring - Admin</h1>
+
+    <div class="status">
+        <h2>Status Sensor</h2>
+        <p>Gas Bocor: <span id="gas">Aman</span></p>
+        <p>Asap Terdeteksi: <span id="smoke">Aman</span></p>
+        <p>Suhu: <span id="temp">Aman</span> °C</p>
+        <p>Kelembaban: <span id="humidity">Aman</span> %</p>
+        <p>Kecepatan Angin: <span id="wind">Aman</span> km/h</p>
+    </div>
+
+    <div class="status">
+        <h2>Kontrol Alarm</h2>
+        <p>Gas: <span id="gas-alarm">OFF</span> <button class="btn" onclick="setAlarm('gas')">ON/OFF</button></p>
+        <p>Asap: <span id="smoke-alarm">OFF</span> <button class="btn" onclick="setAlarm('smoke')">ON/OFF</button></p>
+        <p>Suhu: <span id="temp-alarm">OFF</span> <button class="btn" onclick="setAlarm('temp')">ON/OFF</button></p>
+        <p>Kelembaban: <span id="humidity-alarm">OFF</span> <button class="btn" onclick="setAlarm('humidity')">ON/OFF</button></p>
+    </div>
+</body>
+</html>
