@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Pendeteksi Kebocoran Gas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            background-color: #f0f2f5;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .dashboard {
+            max-width: 500px;
+            width: 100%;
+            background-color: #f1f5f9;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .header h1 {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        .status-display {
+            background-color: white;
+            padding: 24px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+        }
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .status-label {
+            font-size: 18px;
+            font-weight: 500;
+            color: #374151;
+        }
+        .status-indicator {
+            padding: 8px 16px;
+            border-radius: 9999px;
+            font-weight: 600;
+            color: white;
+            text-transform: uppercase;
+        }
+        .status-normal {
+            background-color: #10b981;
+        }
+        .status-warning {
+            background-color: #f59e0b;
+        }
+        .status-danger {
+            background-color: #ef4444;
+        }
+        .status-testing {
+            background-color: #8b5cf6;
+        }
+        .status-off {
+            background-color: #6b7280;
+        }
+        .gas-level {
+            margin-bottom: 16px;
+        }
+        .progress-bar {
+            height: 24px;
+            width: 100%;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            overflow: hidden;
+            margin-top: 8px;
+            margin-bottom: 4px;
+        }
+        .progress-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        .progress-fill-normal {
+            background-color: #10b981;
+        }
+        .progress-fill-warning {
+            background-color: #f59e0b;
+        }
+        .progress-fill-danger {
+            background-color: #ef4444;
+        }
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #4b5563;
+        }
+        .alarm-warning {
+            background-color: #fee2e2;
+            border-left: 4px solid #ef4444;
+            color: #b91c1c;
+            padding: 16px;
+            margin-bottom: 16px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        .alarm-warning p:first-child {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .button {
+            padding: 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .button-on {
+            background-color: #10b981;
+        }
+        .button-on:hover {
+            background-color: #059669;
+        }
+        .button-off {
+            background-color: #ef4444;
+        }
+        .button-off:hover {
+            background-color: #dc2626;
+        }
+        .button-test {
+            background-color: #3b82f6;
+        }
+        .button-test:hover {
+            background-color: #2563eb;
+        }
+        .button-reset {
+            background-color: #f59e0b;
+        }
+        .button-reset:hover {
+            background-color: #d97706;
+        }
+        .button-calibrate {
+            background-color: #8b5cf6;
+        }
+        .button-calibrate:hover {
+            background-color: #7c3aed;
+        }
+        .button-disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .system-info {
+            margin-top: 24px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        .system-info p {
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>Sistem Pendeteksi Kebocoran Gas</h1>
+        </div>
+        
+        <div class="status-display">
+            <div class="status-row">
+                <span class="status-label">Status Sistem:</span>
+                <div class="status-indicator status-normal" id="statusIndicator"></div>
+            </div>
+            
+            <div class="gas-level">
+                <span class="status-label">Tingkat Gas:</span>
+                <div class="progress-bar">
+                    <div class="progress-fill progress-fill-normal" id="gasLevelFill" style="width: 10%;"></div>
+                </div>
+                <div class="progress-labels">
+                    <span id="gas"></span>
+                    <span id="gas"></span>
+                    <span id="gas" ></span>
+                    
+                </div>
+            </div>
+            
+            <div id="alarmWarning" style="display: none;" class="alarm-warning">
+                <p>AWAS! TERDETEKSI KEBOCORAN GAS!</p>
+                <p>Segera evakuasi area dan hubungi teknisi.</p>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="button button-off" id="powerButton">MATIKAN SISTEM</button>
+            <button class="button button-test" id="testButton">UJI ALARM</button>
+            <button class="button button-reset" id="resetButton">RESET ALARM</button>
+            <button class="button button-calibrate" id="calibrateButton">KALIBRASI SENSOR</button>
+        </div>
+        
+        <!--<div class="system-info">
+            <p>Status Sensor: <span id="sensorStatus">Aktif</span></p>
+            <p>Terakhir Dikalibrasi: </p>
+            <p>Versi Firmware: 2.3.5</p>
+        </div>-->
+    </div>
+
+    
+
+    <script>
+
+        // script.js
+
+async function fetchData() {
+    try {
+        const response = await fetch("/data");
+        if (!response.ok) throw new Error("Gagal mengambil data");
+        const data = await response.json();
+        document.getElementById("gas").innerText = data.gas || "N/A";
+        document.getElementById("smoke").innerText = data.smoke || "N/A";
+        document.getElementById("temp").innerText = data.temp || "N/A";
+        updateBoxes();
+    } catch (error) {
+        console.error("Error fetching data:", error);
+    }
+}
+
+function updateBoxes() {
+    updateBox("gas", "gasBox");
+    updateBox("smoke", "smokeBox");
+    updateBox("temp", "tempBox");
+}
+
+function updateBox(id, boxId) {
+    let value = document.getElementById(id).innerText;
+    let box = document.getElementById(boxId);
+
+    if (!value || value === "GAGAL") {
+        box.className = "small-box bg-secondary";
+    } else {
+        let number = parseFloat(value);
+        box.className = number > 13000 ? "small-box bg-danger" : "small-box bg-success";
+    }
+}
+
+setInterval(fetchData, 3000);
+fetchData();
+
+// Gas Level Simulation and Alarm System
+let gasLevel = 10;
+let alarm = false;
+let systemStatus = 'normal';
+let isPowerOn = true;
+let isTesting = false;
+let gasLevelInterval;
+
+const statusIndicator = document.getElementById('statusIndicator');
+const gasLevelFill = document.getElementById('gasLevelFill');
+const gasLevelPercentage = document.getElementById('gasLevelPercentage');
+const alarmWarning = document.getElementById('alarmWarning');
+const powerButton = document.getElementById('powerButton');
+const testButton = document.getElementById('testButton');
+const resetButton = document.getElementById('resetButton');
+const calibrateButton = document.getElementById('calibrateButton');
+
+function startGasLevelSimulation() {
+    if (gasLevelInterval) {
+        clearInterval(gasLevelInterval);
+    }
+    gasLevelInterval = setInterval(() => {
+        if (isPowerOn && !isTesting) {
+            gasLevel = gasLevel + Math.floor(Math.random() * 5) - 2;
+            gasLevel = Math.max(5, Math.min(100, gasLevel));
+            updateGasLevelDisplay();
+            checkAlarmStatus();
+        }
+    }, 2000);
+}
+
+function updateGasLevelDisplay() {
+    gasLevelFill.style.width = `${gasLevel}%`;
+    gasLevelPercentage.textContent = `${gasLevel}%`;
+    
+    if (gasLevel > 5000) {
+        gasLevelFill.className = 'progress-fill progress-fill-danger';
+    } else if (gasLevel > 2000) {
+        gasLevelFill.className = 'progress-fill progress-fill-warning';
+    } else {
+        gasLevelFill.className = 'progress-fill progress-fill-normal';
+    }
+}
+
+function checkAlarmStatus() {
+    if (gasLevel > 50) {
+        alarm = true;
+        systemStatus = 'bahaya';
+        alarmWarning.style.display = 'block';
+    } else if (gasLevel > 30) {
+        alarm = false;
+        systemStatus = 'peringatan';
+        alarmWarning.style.display = 'none';
+    } else {
+        alarm = false;
+        systemStatus = 'normal';
+        alarmWarning.style.display = 'none';
+    }
+    updateStatusDisplay();
+}
+
+function updateStatusDisplay() {
+    statusIndicator.textContent = isPowerOn ? systemStatus.toUpperCase() : 'MATI';
+    statusIndicator.className = 'status-indicator';
+    if (!isPowerOn) {
+        statusIndicator.classList.add('status-off');
+    } else if (systemStatus === 'bahaya') {
+        statusIndicator.classList.add('status-danger');
+    } else if (systemStatus === 'peringatan') {
+        statusIndicator.classList.add('status-warning');
+    } else {
+        statusIndicator.classList.add('status-normal');
+    }
+}
+
+powerButton.addEventListener('click', () => {
+    isPowerOn = !isPowerOn;
+    if (isPowerOn) {
+        powerButton.textContent = 'MATIKAN SISTEM';
+        powerButton.className = 'button button-off';
+        systemStatus = 'normal';
+        gasLevel = 10;
+        alarm = false;
+        startGasLevelSimulation();
+    } else {
+        powerButton.textContent = 'HIDUPKAN SISTEM';
+        powerButton.className = 'button button-on';
+        systemStatus = 'mati';
+        gasLevel = 0;
+        alarm = false;
+        if (gasLevelInterval) {
+            clearInterval(gasLevelInterval);
+        }
+    }
+    updateGasLevelDisplay();
+    updateStatusDisplay();
+    alarmWarning.style.display = 'none';
+});
+
+testButton.addEventListener('click', () => {
+    if (!isPowerOn || isTesting) return;
+    isTesting = true;
+    testButton.className = 'button button-disabled';
+    gasLevel = 80;
+    alarm = true;
+    systemStatus = 'pengujian';
+    updateGasLevelDisplay();
+    updateStatusDisplay();
+    alarmWarning.style.display = 'block';
+    setTimeout(() => {
+        isTesting = false;
+        testButton.className = 'button button-test';
+        gasLevel = 10;
+        updateGasLevelDisplay();
+        checkAlarmStatus();
+    }, 5000);
+});
+
+resetButton.addEventListener('click', () => {
+    if (!isPowerOn) return;
+    gasLevel = 10;
+    alarm = false;
+    systemStatus = 'normal';
+    updateGasLevelDisplay();
+    updateStatusDisplay();
+    alarmWarning.style.display = 'none';
+});
+
+startGasLevelSimulation();
+updateGasLevelDisplay();
+updateStatusDisplay();
+
+    </script>
+</body>
+</html>
